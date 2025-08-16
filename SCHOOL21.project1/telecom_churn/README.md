@@ -15,7 +15,7 @@
 ## Установка
 1. Клонируйте репозиторий:
    ```bash
-   git clone https://github.com/yourusername/telecom_churn.git
+   git clone https://github.com/SashchikovaE/Telecom_churn.git
    cd telecom_churn
    ```
 
@@ -110,4 +110,4 @@ precision
 ## Лицензия
 Этот проект распространяется под лицензией MIT. Вы можете 
 свободно использовать, изменять и распространять его при условии 
-сохранения уведомления об авторстве
+сохранения уведомления об авторстве.

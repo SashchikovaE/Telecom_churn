@@ -2,6 +2,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+
 class DataPreprocessor:
     """
     A class for preprocessing telecom customer churn data.
@@ -16,6 +17,7 @@ class DataPreprocessor:
     Attributes:
         df (pd.DataFrame): The dataframe containing the loaded and processed data.
     """
+
     def __init__(self, filepath):
         """
         Initialize the DataPreprocessor with data from a CSV file.
@@ -27,7 +29,7 @@ class DataPreprocessor:
 
     def add_new_features(self, is_tenure_status=1):
         """
-        Add new engineered features to the dataset
+        Add new engineered features to the dataset.
 
         Args:
             is_tenure_status (bool): If True, adds tenure_status feature (years of service).
@@ -36,7 +38,8 @@ class DataPreprocessor:
         if is_tenure_status == 1:
             self.df['tenure_status'] = self.df['tenure'] // 12
         else:
-            self.df['avg_monthly_charges'] = self.df['TotalCharges'] / (self.df['tenure'] + 1e-10)
+            self.df['avg_monthly_charges'] = self.df['TotalCharges'] / \
+                (self.df['tenure'] + 1e-10)
 
     def encode_categorical_data(self, col, mapping, is_binary_category=0):
         """
@@ -126,8 +129,8 @@ class DataPreprocessor:
         plt.savefig('images/churn_distribution.png')
         plt.show()
         '''
-            Исходя из графика, выяснилось, что отношение оставшихся клиентов к ушедшим - 2.5 / 1 - 
-            что является допустимой разницей            
+            Исходя из графика, выяснилось, что отношение оставшихся клиентов к ушедшим - 2.5 / 1 -
+            что является допустимой разницей
         '''
 
     def visualize_correlation_matrix(self):
@@ -167,10 +170,12 @@ class DataPreprocessor:
             pd.DataFrame: The dataframe with normalized numeric features.
         """
         numeric_cols = self.df.select_dtypes(include=['number']).columns
-        non_binary_cols = [col for col in numeric_cols if self.df[col].nunique() > 2]
+        non_binary_cols = [
+            col for col in numeric_cols if self.df[col].nunique() > 2]
         mean = self.df[non_binary_cols].mean(axis=0)
         std = self.df[non_binary_cols].std(axis=0)
-        self.df[non_binary_cols] = (self.df[non_binary_cols] - mean) / (std + 1e-10)
+        self.df[non_binary_cols] = (
+            self.df[non_binary_cols] - mean) / (std + 1e-10)
         return self.df
 
     def print_table(self):
@@ -193,9 +198,17 @@ class DataPreprocessor:
                 print(i)
                 print(self.df[i].unique())
                 if len(self.df[i].unique()) > 2:
-                    self.encode_categorical_data(i, mapping={'Yes': 1, 'No': 0, 'Male': 1, 'Female': 0})
+                    self.encode_categorical_data(
+                        i, mapping={'Yes': 1, 'No': 0, 'Male': 1, 'Female': 0})
                 else:
-                    self.encode_categorical_data(i, mapping={'Yes': 1, 'No': 0, 'Male': 1, 'Female': 0}, is_binary_category=1)
+                    self.encode_categorical_data(
+                        i,
+                        mapping={
+                            'Yes': 1,
+                            'No': 0,
+                            'Male': 1,
+                            'Female': 0},
+                        is_binary_category=1)
         self.convert_object_to_float()
         self.analyze_empty_rows_and_cols()
         print(self.df.describe())

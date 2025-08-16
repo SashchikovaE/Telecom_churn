@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 
+
 class LogisticRegressionCustom:
     """
     Custom implementation of logistic regression from scratch.
@@ -23,7 +24,9 @@ class LogisticRegressionCustom:
         learning_rate (float): Learning rate for gradient descent
         is_standard_split (bool): If True uses train-test split, else uses CV
     """
-    def __init__(self, penalty, lambd, max_iter, random_state, test_size, learning_rate, is_standard_split):
+
+    def __init__(self, penalty, lambd, max_iter, random_state,
+                 test_size, learning_rate, is_standard_split):
         """
         Initialize logistic regression model with specified parameters.
         """
@@ -126,10 +129,15 @@ class LogisticRegressionCustom:
             Функция потерь резко падает и стремится к нулю, значит на данном этапе обучение
             модели проходит корректно
         '''
-        #self.print_weights(n)
-        X_test_with_bias = np.insert(np.array(X_test, dtype=float), 0, 1, axis=1)
-        test_predictions = (self.sigmoid(np.dot(X_test_with_bias, self.weights)) >= 0.5).astype(int)
-        #return self.weights, test_predictions, y_test
+        # self.print_weights(n)
+        X_test_with_bias = np.insert(
+            np.array(X_test, dtype=float), 0, 1, axis=1)
+        test_predictions = (
+            self.sigmoid(
+                np.dot(
+                    X_test_with_bias,
+                    self.weights)) >= 0.5).astype(int)
+        # return self.weights, test_predictions, y_test
         return self.weights, X_test, y_test
 
     def run_cross_validation(self, X, y):
@@ -144,7 +152,8 @@ class LogisticRegressionCustom:
             list: Metrics for each fold
         """
         metrics = []
-        for X_train, X_test, y_train, y_test in self.cross_validation_split_data(X, y):
+        for X_train, X_test, y_train, y_test in self.cross_validation_split_data(
+                X, y):
             self.train_and_evaluate(X_train, X_test, y_train, y_test)
             y_pred = self.predict(X_test)
             metrics.append(self.calculate_metrics(y_test, y_pred))
@@ -169,7 +178,6 @@ class LogisticRegressionCustom:
         else:
             self.run_cross_validation(X, y)
             return self.weights, None, None
-
 
     def predict(self, X_test):
         """
@@ -228,7 +236,7 @@ class LogisticRegressionCustom:
                 fn += 1
         return tp / (tp + fn + 1e-10)
         '''
-            Результаты моей метрики практически идеально совпадает с 
+            Результаты моей метрики практически идеально совпадает с
             результатами оригинальной встроенной функции
             sklearn: 0.520694259012016
             custom:  0.5206942590119464
@@ -273,9 +281,9 @@ class LogisticRegressionCustom:
         rec = self.recall(y_test, y_pred)
         f1 = (2 * pres * rec) / (pres + rec + 1e-10)
         return f1
-        #y_test = np.array(y_test).astype(int)
-        #y_pred = np.array(y_pred).astype(int)
-        #return f1_score(y_test, y_pred)
+        # y_test = np.array(y_test).astype(int)
+        # y_pred = np.array(y_pred).astype(int)
+        # return f1_score(y_test, y_pred)
 
     def calculate_metrics(self, y_test, y_pred):
         """
@@ -357,7 +365,7 @@ class LogisticRegressionCustom:
             y: Target vector
 
         Prints:
-            Evaluation metrics for the model
+            Evaluation metrics for the model.
         """
         print("custom version")
         weights, X_test, y_test = self.logistic_regression(X, y)

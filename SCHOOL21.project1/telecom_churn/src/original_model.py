@@ -3,6 +3,7 @@ from sklearn.model_selection import KFold, train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 import numpy as np
 
+
 class LogisticRegressionOriginal:
     """
     Wrapper for sklearn's Logistic Regression with extended functionality.
@@ -21,7 +22,9 @@ class LogisticRegressionOriginal:
         test_size (float): Test set proportion (0.0-1.0)
         is_standard_split (bool): True for train-test split, False for CV
     """
-    def __init__(self, penalty, lambd, max_iter, class_weight, random_state, test_size, is_standard_split):
+
+    def __init__(self, penalty, lambd, max_iter, class_weight,
+                 random_state, test_size, is_standard_split):
         """
         Initialize logistic regression model with specified parameters.
         """
@@ -67,7 +70,7 @@ class LogisticRegressionOriginal:
         Returns:
             dict: Evaluation metrics
         """
-        model = LogisticRegression(penalty=self.penalty, C=1/self.lambd, solver='saga', max_iter=self.max_iter, tol=1e-5,
+        model = LogisticRegression(penalty=self.penalty, C=1 / self.lambd, solver='saga', max_iter=self.max_iter, tol=1e-5,
                                    class_weight=self.class_weight, random_state=self.random_state)
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
@@ -106,7 +109,7 @@ class LogisticRegressionOriginal:
             y (Series): Target vector
 
         Outputs:
-            Prints evaluation results to console
+            Prints evaluation results to console.
         """
         print("sklearn version")
         if self.is_standard_split == 0:
@@ -116,7 +119,8 @@ class LogisticRegressionOriginal:
             for fold, (train_i, test_i) in enumerate(kf.split(X), 1):
                 X_train, y_train = X.iloc[train_i], y.iloc[train_i]
                 X_test, y_test = X.iloc[test_i], y.iloc[test_i]
-                fold_metrics = self.train_and_evaluate(X_train, y_train, X_test, y_test)
+                fold_metrics = self.train_and_evaluate(
+                    X_train, y_train, X_test, y_test)
                 print(f"fold {fold} ", fold_metrics)
             avg_metrics = self.average_metrics(self.cv_metrics)
             print(avg_metrics)
