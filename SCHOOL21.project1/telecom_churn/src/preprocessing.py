@@ -1,7 +1,7 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-
+from pathlib import Path
 
 class DataPreprocessor:
     """
@@ -18,41 +18,31 @@ class DataPreprocessor:
         df (pd.DataFrame): The dataframe containing the loaded and processed data.
     """
 
-    def __init__(self, filepath):
+    def __init__(self, df=None):
         """
         Initialize the DataPreprocessor with data from a CSV file.
 
         Args:
             filepath (str): Path to the CSV file containing the raw data.
         """
-        self.df = pd.read_csv(filepath)
-
-    def add_new_features(self, is_tenure_status=1):
-        """
-        Add new engineered features to the dataset.
-
-        Args:
-            is_tenure_status (bool): If True, adds tenure_status feature (years of service).
-                                     If False, adds avg_monthly_charges feature.
-        """
-        if is_tenure_status == 1:
-            self.df['tenure_status'] = self.df['tenure'] // 12
+        if df is None:
+            data_path = Path(__file__).parent.parent / 'data' / 'telecom.csv'
+            self.df = pd.read_csv(str(data_path))
         else:
-            self.df['avg_monthly_charges'] = self.df['TotalCharges'] / \
-                (self.df['tenure'] + 1e-10)
+            self.df = df
 
-    def encode_categorical_data(self, col, mapping, is_binary_category=0):
+    def encode_categorical_data(self, col, mapping, is_binary_category=0, drop_first=True):
         """
         Encode categorical features into numerical values
 
         Args:
             col (str): Column name to encode.
-            mapping (dict): Dictionary for value mapping (e.g., {'Yes': 1, 'No': 0}).
+            mapping (dict): Dictionary for value mapping.
             is_binary_category (bool): If True, applies simple mapping.
                                       If False, performs one-hot encoding.
         """
         if is_binary_category == 0:
-            dummies = pd.get_dummies(self.df[col], prefix=col, drop_first=True)
+            dummies = pd.get_dummies(self.df[col], prefix=col, drop_first=drop_first)
             dummies = dummies.astype(int)
             self.df = pd.concat([
                 self.df.drop(col, axis=1),
@@ -71,6 +61,23 @@ class DataPreprocessor:
             if col != self.df.columns[0]:
                 self.df[col] = pd.to_numeric(
                     self.df[col].astype(str), errors='coerce')
+
+    def analyze_empty_rows_and_cols(self):
+        """
+        Analyze and handle missing values in the dataset.
+
+        Replaces NaN values with 0 based on business logic.
+        """
+        pd.set_option('display.width', None)
+        print(self.df[self.df.isna().any(axis=1)])
+        '''
+            Так как tenure = 0 и Churn_encoded = 0, то есть не произошло никаких
+            ошибок, клиент меньше месяца пользуется данными услугами и ни один клиент не ушел,
+            можно сделать вывод, что эти клиенты только оформили подписку, и еще не пришло время оплаты:
+            таким образом, можем заменить все Nan в столбце TotalCharges нулями.
+        '''
+        self.df = self.df.fillna(0)
+        print(self.df.isnull().sum())
 
     def check_outliers(self, cols):
         """
@@ -118,6 +125,21 @@ class DataPreprocessor:
         plt.show()
         plt.close()
 
+    def add_new_features(self, is_tenure_status=1):
+        """
+        Add new engineered features to the dataset.
+
+        Args:
+            is_tenure_status (bool): If True, adds tenure_status feature (years of service).
+                                     If False, adds avg_monthly_charges feature.
+        """
+        if is_tenure_status == 1:
+            self.df['tenure_status'] = self.df['tenure'] // 12
+        else:
+            self.df['avg_monthly_charges'] = self.df['TotalCharges'] / \
+                (self.df['tenure'] + 1e-10)
+
+
     def visualize_churn_distribution(self):
         """
         Visualize the distribution of churn classes.
@@ -144,23 +166,6 @@ class DataPreprocessor:
         plt.title('Correlation matrix')
         plt.savefig('images/correlation_matrix.png')
         plt.show()
-
-    def analyze_empty_rows_and_cols(self):
-        """
-        Analyze and handle missing values in the dataset.
-
-        Replaces NaN values with 0 based on business logic.
-        """
-        pd.set_option('display.width', None)
-        print(self.df[self.df.isna().any(axis=1)])
-        '''
-            Так как tenure = 0 и Churn_encoded = 0, то есть не произошло никаких
-            ошибок, клиент меньше месяца пользуется данными услугами и ни один клиент не ушел,
-            можно сделать вывод, что эти клиенты только оформили подписку, и еще не пришло время оплаты:
-            таким образом, можем заменить все Nan в столбце TotalCharges нулями.
-        '''
-        self.df = self.df.fillna(0)
-        print(self.df.isnull().sum())
 
     def normalize_data(self):
         """

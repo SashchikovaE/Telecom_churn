@@ -2,8 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
-
+from sklearn.metrics import roc_auc_score
+import pickle
+from pathlib import Path
+import os
 
 class LogisticRegressionCustom:
     """
@@ -31,7 +33,6 @@ class LogisticRegressionCustom:
         Initialize logistic regression model with specified parameters.
         """
         self.weights = None
-        self.cv_metrics = None
         self.penalty = penalty
         self.lambd = lambd
         self.max_iter = max_iter
@@ -40,7 +41,7 @@ class LogisticRegressionCustom:
         self.learning_rate = learning_rate
         self.is_standard_split = is_standard_split
 
-    def split_data(self, X, y):
+    def standard_split(self, X, y):
         """
         Split data into train and test sets.
 
@@ -54,7 +55,7 @@ class LogisticRegressionCustom:
         return train_test_split(
             X, y, test_size=self.test_size, random_state=self.random_state)
 
-    def cross_validation_split_data(self, X, y):
+    def cross_validation(self, X, y):
         """
         Generator for cross-validation splits.
 
@@ -65,7 +66,7 @@ class LogisticRegressionCustom:
         Yields:
             tuple: (X_train, X_test, y_train, y_test) for each fold
         """
-        kf = KFold(n_splits=5, shuffle=True)
+        kf = KFold(n_splits=5, shuffle=True, random_state=self.random_state)
         for train_i, test_i in kf.split(X):
             X_train, y_train, X_test, y_test = X.iloc[train_i], y.iloc[train_i], X.iloc[test_i], y.iloc[test_i]
             yield (X_train, X_test, y_train, y_test)
@@ -83,7 +84,7 @@ class LogisticRegressionCustom:
         z = np.clip(z, -500, 500)
         return 1 / (1 + np.exp(-z))
 
-    def train_and_evaluate(self, X_train, X_test, y_train, y_test):
+    def train_model(self, X_train, y_train):
         """
         Train model and evaluate on test set.
 
@@ -100,6 +101,7 @@ class LogisticRegressionCustom:
         y_train = np.array(y_train, dtype=float)
         X_train = np.insert(X_train, 0, 1, axis=1)
         l, n = X_train.shape
+        np.random.seed(self.random_state)
         self.weights = np.random.normal(scale=1, size=n)
         loss = []
         a = []
@@ -130,37 +132,9 @@ class LogisticRegressionCustom:
             модели проходит корректно
         '''
         # self.print_weights(n)
-        X_test_with_bias = np.insert(
-            np.array(X_test, dtype=float), 0, 1, axis=1)
-        test_predictions = (
-            self.sigmoid(
-                np.dot(
-                    X_test_with_bias,
-                    self.weights)) >= 0.5).astype(int)
-        # return self.weights, test_predictions, y_test
-        return self.weights, X_test, y_test
+        return self.weights
 
-    def run_cross_validation(self, X, y):
-        """
-        Perform k-fold cross-validation.
-
-        Args:
-            X: Feature matrix
-            y: Target vector
-
-        Returns:
-            list: Metrics for each fold
-        """
-        metrics = []
-        for X_train, X_test, y_train, y_test in self.cross_validation_split_data(
-                X, y):
-            self.train_and_evaluate(X_train, X_test, y_train, y_test)
-            y_pred = self.predict(X_test)
-            metrics.append(self.calculate_metrics(y_test, y_pred))
-        self.cv_metrics = metrics
-        return metrics
-
-    def logistic_regression(self, X, y):
+    def train_and_evaluate(self, X_train, X_test, y_train, y_test):
         """
         Main training method for logistic regression.
 
@@ -171,13 +145,9 @@ class LogisticRegressionCustom:
         Returns:
             tuple: (weights, X_test, y_test) or (weights, None, None) for CV
         """
-        if self.is_standard_split == 1:
-            X_train, X_test, y_train, y_test = self.split_data(X, y)
-            self.train_and_evaluate(X_train, X_test, y_train, y_test)
-            return self.weights, X_test, y_test
-        else:
-            self.run_cross_validation(X, y)
-            return self.weights, None, None
+        self.weights = self.train_model(X_train, y_train)
+        y_pred = self.predict(X_test)
+        return self.calculate_metrics(y_test, y_pred)
 
     def predict(self, X_test):
         """
@@ -195,6 +165,27 @@ class LogisticRegressionCustom:
         model = self.sigmoid(z)
         res = (model >= 0.5).astype(int)
         return res
+
+    def run_standard_split(self, X, y):
+        X_train, X_test, y_train, y_test = self.standard_split(X, y)
+        return self.train_and_evaluate(X_train, X_test, y_train, y_test)
+
+    def run_cross_validation(self, X, y):
+        """
+        Perform k-fold cross-validation.
+
+        Args:
+            X: Feature matrix
+            y: Target vector
+
+        Returns:
+            list: Metrics for each fold
+        """
+        metrics = []
+        for X_train, X_test, y_train, y_test in self.cross_validation(
+                X, y):
+            metrics.append(self.train_and_evaluate(X_train, X_test, y_train, y_test))
+        return metrics
 
     def accuracy(self, y_test, y_pred):
         """
@@ -285,26 +276,6 @@ class LogisticRegressionCustom:
         # y_pred = np.array(y_pred).astype(int)
         # return f1_score(y_test, y_pred)
 
-    def calculate_metrics(self, y_test, y_pred):
-        """
-        Calculate all classification metrics.
-
-        Args:
-            y_test: True labels
-            y_pred: Predicted labels
-
-        Returns:
-            dict: Dictionary of metrics (accuracy, precision, recall, f1, roc_auc)
-        """
-        metrics = {
-            'accuracy': self.accuracy(y_test, y_pred),
-            'precision': self.precision(y_test, y_pred),
-            'recall': self.recall(y_test, y_pred),
-            'f1': self.f1(y_test, y_pred),
-            'roc_auc': roc_auc_score(y_test, y_pred)
-        }
-        return metrics
-
     def print_weights(self, feature_names):
         """
         Print model weights with corresponding feature names in readable format.
@@ -329,7 +300,27 @@ class LogisticRegressionCustom:
         for name, w in zip(feature_names, self.weights[1:]):
             print(f"{name}: {w:.4f}")
 
-    def average_metrics(self, metrics_list):
+    def calculate_metrics(self, y_test, y_pred):
+        """
+        Calculate all classification metrics.
+
+        Args:
+            y_test: True labels
+            y_pred: Predicted labels
+
+        Returns:
+            dict: Dictionary of metrics (accuracy, precision, recall, f1, roc_auc)
+        """
+        metrics = {
+            'accuracy': round(self.accuracy(y_test, y_pred), 4),
+            'precision': round(self.precision(y_test, y_pred), 4),
+            'recall': round(self.recall(y_test, y_pred), 4),
+            'f1': round(self.f1(y_test, y_pred), 4),
+            'ROC-AUC': round(roc_auc_score(y_test, y_pred), 4)
+        }
+        return metrics
+
+    def average_metrics(self, metrics):
         """
         Calculate mean values of evaluation metrics across multiple runs/folds.
 
@@ -348,15 +339,21 @@ class LogisticRegressionCustom:
                       'roc_auc': float
                   }
         """
+        metric_names = ['accuracy', 'precision', 'recall', 'f1', 'ROC-AUC']
         return {
-            'accuracy': np.mean([m['accuracy'] for m in metrics_list]),
-            'precision': np.mean([m['precision'] for m in metrics_list]),
-            'recall': np.mean([m['recall'] for m in metrics_list]),
-            'f1': np.mean([m['f1'] for m in metrics_list]),
-            'roc_auc': np.mean([m['roc_auc'] for m in metrics_list])
+            metric: np.mean([m[metric] for m in metrics]) for metric in metric_names
         }
 
-    def run_custom(self, X, y):
+    def save_model(self, X, y, model_type):
+        model = self.train_model(X, y)
+        cur_file = Path(__file__)
+        model_dir = cur_file.parent.parent.parent / 'models'
+        model_path = model_dir / f'{model_type}.pkl'
+        os.makedirs('models', exist_ok=True)
+        with open(f'models/{model_type}.pkl', 'wb') as f:
+            pickle.dump(model, f)
+
+    def run_logreg_custom(self, X, y):
         """
         Execute complete training and evaluation pipeline.
 
@@ -368,14 +365,11 @@ class LogisticRegressionCustom:
             Evaluation metrics for the model.
         """
         print("custom version")
-        weights, X_test, y_test = self.logistic_regression(X, y)
         if self.is_standard_split == 1:
             print("standard split")
-            y_pred = self.predict(X_test)
-            print(self.calculate_metrics(y_test, y_pred))
+            print(self.run_standard_split(X, y), "\n")
         else:
             print("cross validation")
-            for i, metrics in enumerate(self.cv_metrics, 1):
-                print(f"fold {i}:", metrics)
-            avg_metrics = self.average_metrics(self.cv_metrics)
-            print("average metrics:", avg_metrics)
+            metrics = self.run_cross_validation(X, y)
+            print(self.average_metrics(metrics),"\n")
+        self.save_model(X, y, 'log_regression_custom')
