@@ -2,6 +2,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from pathlib import Path
+import joblib
 
 class DataPreprocessor:
     """
@@ -108,11 +109,7 @@ class DataPreprocessor:
         '''
 
     def visualize_outliers(self):
-        """
-        Visualize outliers using boxplots for key numeric columns.
-
-        Saves plot to 'images/outliers_boxplot.png'.
-        """
+        """Visualize outliers using boxplots for key numeric columns"""
         sns.boxplot(
             data=self.df[['tenure', 'MonthlyCharges', 'TotalCharges']], whis=0.5)
         '''
@@ -141,11 +138,7 @@ class DataPreprocessor:
 
 
     def visualize_churn_distribution(self):
-        """
-        Visualize the distribution of churn classes.
-
-        Saves plot to 'images/churn_distribution.png'.
-        """
+        """Visualize the distribution of churn classes"""
         sns.countplot(data=self.df, x='Churn')
         plt.title('Churn distribution of client')
         plt.savefig('images/churn_distribution.png')
@@ -156,48 +149,52 @@ class DataPreprocessor:
         '''
 
     def visualize_correlation_matrix(self):
-        """
-        Visualize correlation matrix for numeric features.
-
-        Saves plot to 'images/correlation_matrix.png'.
-        """
+        """Visualize correlation matrix for numeric features"""
         numeric_cols = self.df.select_dtypes(include=['int64', 'float64'])
         sns.heatmap(numeric_cols.corr(), annot=True, fmt=".2f")
         plt.title('Correlation matrix')
         plt.savefig('images/correlation_matrix.png')
         plt.show()
 
-    def normalize_data(self):
-        """
-        Normalize numeric features using Z-score normalization.
-
-        Returns:
-            pd.DataFrame: The dataframe with normalized numeric features.
-        """
+    def normalize_data(self, loaded=False):
+        """Normalize numeric features using Z-score normalization"""
         numeric_cols = self.df.select_dtypes(include=['number']).columns
         non_binary_cols = [
             col for col in numeric_cols if self.df[col].nunique() > 2]
-        mean = self.df[non_binary_cols].mean(axis=0)
-        std = self.df[non_binary_cols].std(axis=0)
+        if not loaded:
+            mean = self.df[non_binary_cols].mean(axis=0)
+            std = self.df[non_binary_cols].std(axis=0)
+            norma = {
+                'mean': mean,
+                'std': std,
+                'non_binary_cols': non_binary_cols
+            }
+            cur_file = Path(__file__)
+            model_dir = cur_file.parent.parent / 'models'
+            model_dir.mkdir(parents=True, exist_ok=True)
+            model_path = model_dir / 'norma.joblib'
+            joblib.dump(norma, model_path)
+        else:
+            cur_file = Path(__file__)
+            model_dir = cur_file.parent.parent / 'models'
+            model_dir.mkdir(parents=True, exist_ok=True)
+            model_path = model_dir / 'norma.joblib'
+            norma = joblib.load(model_path)
+            print(model_path)
+            mean = norma['mean']
+            std = norma['std']
+            non_binary_cols = norma['non_binary_cols']
         self.df[non_binary_cols] = (
             self.df[non_binary_cols] - mean) / (std + 1e-10)
         return self.df
 
     def print_table(self):
-        """Print the current state of the dataframe."""
+        """Print the current state of the dataframe"""
         pd.set_option('display.width', None)
         print(self.df)
 
     def preprocess(self, exclude_cols):
-        """
-        Execute the complete preprocessing pipeline.
-
-        Args:
-            exclude_cols (list): Columns to exclude from preprocessing.
-
-        Returns:
-            pd.DataFrame: The fully processed dataframe.
-        """
+        """Execute the complete preprocessing pipeline"""
         for i in self.df.columns.tolist():
             if i not in exclude_cols:
                 print(i)
@@ -216,7 +213,7 @@ class DataPreprocessor:
                         is_binary_category=1)
         self.convert_object_to_float()
         self.analyze_empty_rows_and_cols()
-        print(self.df.describe())
+        #print(self.df.describe())
         self.check_outliers(cols=['tenure', 'MonthlyCharges', 'TotalCharges'])
         self.visualize_outliers()
         self.add_new_features()

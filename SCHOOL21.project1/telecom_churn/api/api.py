@@ -4,21 +4,25 @@ import pandas as pd
 import sys
 import os
 from pathlib import Path
-current_dir = os.path.dirname(os.path.abspath(__file__))
-src_path = os.path.join(current_dir, 'src')
-sys.path.append(src_path)
-from src.preprocessing import DataPreprocessor
+#current_dir = os.path.dirname(os.path.abspath(__file__))
+#src_path = os.path.join(current_dir, 'src')
+#sys.path.append(src_path)
+
+current_file = Path(__file__).resolve()
+parent_dir = current_file.parent.parent
+src_path = parent_dir / 'src'
+sys.path.append(str(src_path))
+from preprocessing import DataPreprocessor
 
 app = Flask(__name__)
 
 def load():
     cur_file = Path(__file__)
-    model_dir = cur_file.parent / 'models'
+    model_dir = cur_file.parent.parent / 'models'
     model_dir.mkdir(parents=True, exist_ok=True)
     model_path = model_dir / 'log_regression_original.joblib'
     if not model_path.exists():
         raise FileNotFoundError(f"Файл модели не найден: {model_path}")
-
     if model_path.stat().st_size == 0:
         raise ValueError(f"Файл модели пуст: {model_path}")
     model = joblib.load(model_path)
@@ -77,14 +81,14 @@ def predict():
     for cols in missing_cols:
         data.df[cols] = 0
     data.df = data.df[model.feature_names_in_]
+    data.normalize_data(loaded=True)
     prediction = model.predict(data.df)[0]
-    probability = model.predict_proba(data.df)[0][1]
+    probability = model.predict_proba(data.df)[0, 1]
     result = {
         'prediction': 'Клиент уйдет' if prediction == 1 else 'Клиент останется',
         'probability': round(probability * 100, 2),
         'confidence': 'высокая' if probability > 0.7 else 'средняя' if probability > 0.5 else 'низкая'
     }
-
     return render_template('index.html', result=result)
 
 if __name__ == "__main__":

@@ -1,7 +1,10 @@
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import KFold, train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 import numpy as np
+import pandas as pd
 from pathlib import Path
 import joblib
 
@@ -64,6 +67,9 @@ class LogisticRegressionOriginal:
                                    class_weight=self.class_weight, random_state=self.random_state)
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
+        y_proba = model.predict_proba(X_test)
+        print("Probabilities on test data:")
+        print(pd.Series(y_proba[:, 1]).describe())
         return self.calculate_metrics(y_test, y_pred)
 
     def run_standard_split(self, X, y):
@@ -94,8 +100,12 @@ class LogisticRegressionOriginal:
 
     def save_model(self, X, y, model_type):
         model = LogisticRegression(penalty=self.penalty, C=1 / self.lambd, solver='saga', max_iter=self.max_iter, tol=1e-5,
-                                   class_weight=self.class_weight, random_state=self.random_state)
+                                class_weight=self.class_weight, random_state=self.random_state)
         model.fit(X, y)
+        y_proba = model.predict_proba(X)
+        print("Probabilities on full data:")
+        print(pd.Series(y_proba[:, 1]).describe())
+        print(X.shape)
         cur_file = Path(__file__)
         model_dir = cur_file.parent.parent / 'models'
         model_dir.mkdir(parents=True, exist_ok=True)
