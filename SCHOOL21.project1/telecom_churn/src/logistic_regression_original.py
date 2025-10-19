@@ -1,8 +1,6 @@
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import KFold, train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -29,9 +27,7 @@ class LogisticRegressionOriginal:
 
     def __init__(self, penalty, lambd, max_iter, class_weight,
                  random_state, test_size, is_standard_split):
-        """
-        Initialize logistic regression model with specified parameters.
-        """
+        """Initialize logistic regression model with specified parameters."""
         self.penalty = penalty
         self.lambd = lambd
         self.max_iter = max_iter
@@ -52,17 +48,17 @@ class LogisticRegressionOriginal:
 
     def train_and_evaluate(self, X_train, X_test, y_train, y_test):
         """
-                Train model and evaluate on test set.
+        Train model and evaluate on test set
 
-                Args:
-                    X_train (DataFrame): Training features
-                    y_train (Series): Training labels
-                    X_test (DataFrame): Test features
-                    y_test (Series): Test labels
+        Args:
+            X_train (DataFrame): Training features
+            y_train (Series): Training labels
+            X_test (DataFrame): Test features
+            y_test (Series): Test label
 
-                Returns:
-                    dict: Evaluation metrics
-                """
+        Returns:
+            dict: Evaluation metrics
+        """
         model = LogisticRegression(penalty=self.penalty, C=1 / self.lambd, solver='saga', max_iter=self.max_iter, tol=1e-5,
                                    class_weight=self.class_weight, random_state=self.random_state)
         model.fit(X_train, y_train)
@@ -103,17 +99,14 @@ class LogisticRegressionOriginal:
                                 class_weight=self.class_weight, random_state=self.random_state)
         model.fit(X, y)
         y_proba = model.predict_proba(X)
-        print("Probabilities on full data:")
-        print(pd.Series(y_proba[:, 1]).describe())
-        print(X.shape)
         cur_file = Path(__file__)
-        model_dir = cur_file.parent.parent / 'models'
+        model_dir = cur_file.parent.parent / 'api_files'
         model_dir.mkdir(parents=True, exist_ok=True)
         model_path = model_dir / f'{model_type}.joblib'
         joblib.dump(model, model_path)
 
     def run_logreg_orig(self, X, y):
-        print("sklearn version")
+        print("sklearn logistic regression")
         if self.is_standard_split:
             print("standard split")
             print(self.run_standard_split(X, y), "\n")

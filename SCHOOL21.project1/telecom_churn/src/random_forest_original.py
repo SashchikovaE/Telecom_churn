@@ -2,16 +2,25 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import KFold, train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 import numpy as np
-import pickle
-from pathlib import Path
-import os
 
 class RandomForestOriginal:
+    """
+       A wrapper class for sklearn's Random Forest classifier with enhanced evaluation capabilities.
 
+       This class provides a simplified interface for training and evaluating Random Forest models
+       with both standard train-test split and cross-validation approaches. It automatically
+       calculates multiple evaluation metrics and supports class balancing.
+
+       Attributes:
+           n_estimators (int): The number of trees in the forest.
+           max_depth (int): The maximum depth of the trees.
+           random_state (int): Random state for reproducibility.
+           test_size (float): Proportion of dataset to include in test split (0.0 to 1.0).
+           is_standard_split (bool): If True, use standard train-test split;
+                                    if False, use cross-validation.
+    """
     def __init__(self, n_estimators, max_depth, random_state, test_size, is_standard_split):
-        """
-        Initialize logistic regression model with specified parameters.
-        """
+        """Initialize logistic regression model with specified parameters."""
         self.n_estimators = n_estimators
         self.max_depth = max_depth
         self.random_state = random_state
@@ -30,17 +39,17 @@ class RandomForestOriginal:
 
     def train_and_evaluate(self, X_train, X_test, y_train, y_test):
         """
-                Train model and evaluate on test set.
+        Train model and evaluate on test set
 
-                Args:
-                    X_train (DataFrame): Training features
-                    y_train (Series): Training labels
-                    X_test (DataFrame): Test features
-                    y_test (Series): Test labels
+        Args:
+            X_train (DataFrame): Training features
+            y_train (Series): Training labels
+            X_test (DataFrame): Test features
+            y_test (Series): Test label
 
-                Returns:
-                    dict: Evaluation metrics
-                """
+        Returns:
+            dict: Evaluation metrics
+        """
         model = RandomForestClassifier(n_estimators=self.n_estimators, max_depth=self.max_depth, random_state=self.random_state, class_weight='balanced')
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
@@ -72,16 +81,6 @@ class RandomForestOriginal:
             metric: np.mean([m[metric] for m in metrics]) for metric in metric_names
         }
 
-    def save_model(self, X, y, model_type):
-        model = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=self.random_state, class_weight='balanced')
-        model.fit(X, y)
-        cur_file = Path(__file__)
-        model_dir = cur_file.parent / 'models'
-        model_path = model_dir / f'{model_type}.pkl'
-        os.makedirs('models', exist_ok=True)
-        with open(f'models/{model_type}.pkl', 'wb') as f:
-            pickle.dump(model, f)
-
     def run_randfor_orig(self, X, y):
         print("sklearn random forest")
         if self.is_standard_split:
@@ -91,4 +90,3 @@ class RandomForestOriginal:
             print("cross validation")
             metrics = self.run_cross_validation(X, y)
             print(self.average_metrics(metrics), "\n")
-        self.save_model(X, y, 'random_forest_original')

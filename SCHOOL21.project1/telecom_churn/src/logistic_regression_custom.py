@@ -29,9 +29,7 @@ class LogisticRegressionCustom:
 
     def __init__(self, penalty, lambd, max_iter, random_state,
                  test_size, learning_rate, is_standard_split):
-        """
-        Initialize logistic regression model with specified parameters.
-        """
+        """Initialize logistic regression model with specified parameters."""
         self.weights = None
         self.penalty = penalty
         self.lambd = lambd
@@ -42,30 +40,12 @@ class LogisticRegressionCustom:
         self.is_standard_split = is_standard_split
 
     def standard_split(self, X, y):
-        """
-        Split data into train and test sets.
-
-        Args:
-            X: Feature matrix
-            y: Target vector
-
-        Returns:
-            tuple: (X_train, X_test, y_train, y_test)
-        """
+        """Split data into train and test sets."""
         return train_test_split(
             X, y, test_size=self.test_size, random_state=self.random_state)
 
     def cross_validation(self, X, y):
-        """
-        Generator for cross-validation splits.
-
-        Args:
-            X: Feature matrix
-            y: Target vector
-
-        Yields:
-            tuple: (X_train, X_test, y_train, y_test) for each fold
-        """
+        """Generator for cross-validation splits."""
         kf = KFold(n_splits=5, shuffle=True, random_state=self.random_state)
         for train_i, test_i in kf.split(X):
             X_train, y_train, X_test, y_test = X.iloc[train_i], y.iloc[train_i], X.iloc[test_i], y.iloc[test_i]
@@ -135,16 +115,7 @@ class LogisticRegressionCustom:
         return self.weights
 
     def train_and_evaluate(self, X_train, X_test, y_train, y_test):
-        """
-        Main training method for logistic regression.
-
-        Args:
-            X: Feature matrix
-            y: Target vector
-
-        Returns:
-            tuple: (weights, X_test, y_test) or (weights, None, None) for CV
-        """
+        """Main training method for logistic regression."""
         self.weights = self.train_model(X_train, y_train)
         y_pred = self.predict(X_test)
         return self.calculate_metrics(y_test, y_pred)
@@ -167,6 +138,16 @@ class LogisticRegressionCustom:
         return res
 
     def run_standard_split(self, X, y):
+        """
+        Perform standart split.
+
+        Args:
+            X: Feature matrix
+            y: Target vector
+
+        Returns:
+            list: Metrics for each fold
+        """
         X_train, X_test, y_train, y_test = self.standard_split(X, y)
         return self.train_and_evaluate(X_train, X_test, y_train, y_test)
 
@@ -206,16 +187,7 @@ class LogisticRegressionCustom:
         return tp_np / len(y_pred)
 
     def recall(self, y_test, y_pred):
-        """
-        Compute recall score.
-
-        Args:
-            y_test: True labels
-            y_pred: Predicted labels
-
-        Returns:
-            float: Recall score
-        """
+        """Compute recall score."""
         y_test = np.array(y_test, dtype=float)
         y_pred = np.array(y_pred, dtype=int)
         tp = 0
@@ -234,16 +206,7 @@ class LogisticRegressionCustom:
         '''
 
     def precision(self, y_test, y_pred):
-        """
-        Compute precision score.
-
-        Args:
-            y_test: True labels
-            y_pred: Predicted labels
-
-        Returns:
-            float: Precision score
-        """
+        """Compute precision score."""
         y_test = np.array(y_test, dtype=int)
         y_pred = np.array(y_pred, dtype=int)
         tp = 0
@@ -256,25 +219,13 @@ class LogisticRegressionCustom:
         return tp / (tp + fp + 1e-10)
 
     def f1(self, y_test, y_pred):
-        """
-        Compute f1 score.
-
-        Args:
-            y_test: True labels
-            y_pred: Predicted labels
-
-        Returns:
-            float: Precision score
-        """
+        """Compute f1 score."""
         y_test = np.array(y_test, dtype=float)
         y_pred = np.array(y_pred, dtype=int)
         pres = self.precision(y_test, y_pred)
         rec = self.recall(y_test, y_pred)
         f1 = (2 * pres * rec) / (pres + rec + 1e-10)
         return f1
-        # y_test = np.array(y_test).astype(int)
-        # y_pred = np.array(y_pred).astype(int)
-        # return f1_score(y_test, y_pred)
 
     def print_weights(self, feature_names):
         """
@@ -344,27 +295,9 @@ class LogisticRegressionCustom:
             metric: np.mean([m[metric] for m in metrics]) for metric in metric_names
         }
 
-    def save_model(self, X, y, model_type):
-        model = self.train_model(X, y)
-        cur_file = Path(__file__)
-        model_dir = cur_file.parent.parent.parent / 'models'
-        model_path = model_dir / f'{model_type}.pkl'
-        os.makedirs('models', exist_ok=True)
-        with open(f'models/{model_type}.pkl', 'wb') as f:
-            pickle.dump(model, f)
-
     def run_logreg_custom(self, X, y):
-        """
-        Execute complete training and evaluation pipeline.
-
-        Args:
-            X: Feature matrix
-            y: Target vector
-
-        Prints:
-            Evaluation metrics for the model.
-        """
-        print("custom version")
+        """Execute complete training and evaluation pipeline."""
+        print("custom logistic regression")
         if self.is_standard_split == 1:
             print("standard split")
             print(self.run_standard_split(X, y), "\n")
@@ -372,4 +305,3 @@ class LogisticRegressionCustom:
             print("cross validation")
             metrics = self.run_cross_validation(X, y)
             print(self.average_metrics(metrics),"\n")
-        self.save_model(X, y, 'log_regression_custom')

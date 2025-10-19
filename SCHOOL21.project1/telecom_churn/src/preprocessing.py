@@ -54,9 +54,8 @@ class DataPreprocessor:
 
     def convert_object_to_float(self):
         """
-        Convert object-type columns to float where possible
-
-        Handles columns that contain numeric values stored as strings.
+        Convert object-type columns to float where possible,
+        handles columns that contain numeric values stored as strings.
         """
         for col in self.df.select_dtypes(include=['object']).columns:
             if col != self.df.columns[0]:
@@ -65,9 +64,8 @@ class DataPreprocessor:
 
     def analyze_empty_rows_and_cols(self):
         """
-        Analyze and handle missing values in the dataset.
-
-        Replaces NaN values with 0 based on business logic.
+        Analyze and handle missing values in the dataset,
+        replaces NaN values with 0 based on business logic.
         """
         pd.set_option('display.width', None)
         print(self.df[self.df.isna().any(axis=1)])
@@ -156,34 +154,35 @@ class DataPreprocessor:
         plt.savefig('images/correlation_matrix.png')
         plt.show()
 
+    def get_path(self):
+        """Get path of file for save or load them"""
+        cur_file = Path(__file__)
+        model_dir = cur_file.parent.parent / 'api_files'
+        model_dir.mkdir(parents=True, exist_ok=True)
+        model_path = model_dir / 'normalization.joblib'
+        return model_path
+
     def normalize_data(self, loaded=False):
-        """Normalize numeric features using Z-score normalization"""
+        """Normalize numeric features using Z-score normalization with saving mean and std in file"""
         numeric_cols = self.df.select_dtypes(include=['number']).columns
         non_binary_cols = [
             col for col in numeric_cols if self.df[col].nunique() > 2]
         if not loaded:
             mean = self.df[non_binary_cols].mean(axis=0)
             std = self.df[non_binary_cols].std(axis=0)
-            norma = {
+            params = {
                 'mean': mean,
                 'std': std,
                 'non_binary_cols': non_binary_cols
             }
-            cur_file = Path(__file__)
-            model_dir = cur_file.parent.parent / 'models'
-            model_dir.mkdir(parents=True, exist_ok=True)
-            model_path = model_dir / 'norma.joblib'
-            joblib.dump(norma, model_path)
+            model_path = self.get_path()
+            joblib.dump(params, model_path)
         else:
-            cur_file = Path(__file__)
-            model_dir = cur_file.parent.parent / 'models'
-            model_dir.mkdir(parents=True, exist_ok=True)
-            model_path = model_dir / 'norma.joblib'
-            norma = joblib.load(model_path)
-            print(model_path)
-            mean = norma['mean']
-            std = norma['std']
-            non_binary_cols = norma['non_binary_cols']
+            model_path = self.get_path()
+            params = joblib.load(model_path)
+            mean = params['mean']
+            std = params['std']
+            non_binary_cols = params['non_binary_cols']
         self.df[non_binary_cols] = (
             self.df[non_binary_cols] - mean) / (std + 1e-10)
         return self.df
