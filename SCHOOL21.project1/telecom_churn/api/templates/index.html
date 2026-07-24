@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Результат предсказания</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        .result-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }
+        .prediction {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .probability {
+            font-size: 20px;
+            color: #7f8c8d;
+            margin: 10px 0;
+        }
+        .confidence {
+            font-size: 16px;
+            color: #95a5a6;
+            font-style: italic;
+        }
+        .btn-back {
+            display: inline-block;
+            padding: 12px 25px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        .btn-back:hover {
+            background: #2980b9;
+        }
+        .icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        /* Цвета для разных предсказаний */
+        .churn-true { color: #e74c3c; }  /* Клиент уйдет */
+        .churn-false { color: #27ae60; } /* Клиент останется */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">
+            {% if result.prediction == 'Клиент уйдет' %}
+                ⚠️
+            {% else %}
+                ✅
+            {% endif %}
+        </div>
+
+        <h1>Результат предсказания оттока</h1>
+
+        <div class="result-card">
+            <div class="prediction {% if result.prediction == 'Клиент уйдет' %}churn-true{% else %}churn-false{% endif %}">
+                {{ result.prediction }}
+            </div>
+            <div class="probability">Вероятность: {{ result.probability }}%</div>
+            <div class="confidence">Уверенность: {{ result.confidence }}</div>
+        </div>
+
+        <a href="/" class="btn-back">← Назад к форме</a>
+    </div>
+</body>
+</html>
