@@ -107,10 +107,10 @@ telecom_churn/
 - Z-score нормализация данных
 - Визуализация распределения churn 
 
-![churn](src/images/churn_distribution.png)
+![churn](images/churn_distribution.png)
 - Построение матрицы корреляций 
  
-![матрицы корреляций](src/images/correlation_matrix.png)
+![матрицы корреляций](images/correlation_matrix.png)
 
 ## Модели
 
