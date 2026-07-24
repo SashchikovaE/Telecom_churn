@@ -8,11 +8,8 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY requirements.txt .
-
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN python src/main.py
-
-CMD ["python", "api/api.py"]
+CMD python src/main.py && python api/api.py
