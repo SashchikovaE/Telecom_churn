@@ -24,7 +24,6 @@
 2. **Клонируйте репозиторий**:
    ```bash
    git clone https://github.com/SashchikovaE/Telecom_churn.git
-   cd SCHOOL21.project1/telecom_churn
    ```
 
 3. **Соберите и запустите контейнер**:
@@ -38,7 +37,6 @@
 1. **Клонируйте репозиторий**:
    ```bash
    git clone https://github.com/SashchikovaE/Telecom_churn.git
-   cd SCHOOL21.project1/telecom_churn
    ```
 
 2. **Создайте виртуальное окружение**:
